@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>異界陣ジェネレーター</title>
+  <style>
+    :root { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      background: #09080b;
+      color: #f4eef2;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 18px 0 10px;
+      letter-spacing: .08em;
+    }
+
+    .panel {
+      width: min(1360px, 96%);
+      margin: 0 auto 18px;
+      padding: 16px;
+      background: #17131a;
+      border: 1px solid #3a2c35;
+      border-radius: 14px;
+      box-sizing: border-box;
+    }
+
+    .desc {
+      font-size: 14px;
+      line-height: 1.7;
+      opacity: .92;
+      margin-bottom: 14px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .group {
+      min-width: 235px;
+      padding: 12px;
+      background: #241b24;
+      border: 1px solid #45313f;
+      border-radius: 12px;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin: 6px 0 4px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="color"],
+    select,
+    textarea {
+      width: 92%;
+      padding: 8px;
+      border: 0;
+      border-radius: 8px;
+      background: #0e0b10;
+      color: #fff;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input[type="range"] {
+      width: 92%;
+      accent-color: #9d687f;
+    }
+
+    input[type="color"] {
+      height: 42px;
+      padding: 4px;
+    }
+
+    .valueRow {
+      font-size: 12px;
+      opacity: .86;
+      margin-top: 2px;
+      margin-bottom: 4px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 9px;
+      background: #7f546b;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 4px;
+    }
+
+    button:hover { opacity: .9; }
+
+    canvas {
+      display: block;
+      margin: 18px auto 30px;
+      max-width: 96vw;
+      height: auto;
+      border: 1px solid #3a2c35;
+      border-radius: 12px;
+      background: #f6f0e8;
+    }
+
+    .legend {
+      display: inline-block;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.7;
+      opacity: .9;
+    }
+
+    .sectionTitle {
+      margin: 8px 0 6px;
+      font-size: 15px;
+      letter-spacing: .06em;
+      opacity: .94;
+    }
+  </style>
+</head>
+<body>
+  <h1>異界陣ジェネレーター</h1>
+
+  <div class="panel">
+    <div class="desc">
+      バフ線とデバフ線は交差する時、お互いに打ち消し合います。<br>
+      バフ線/デバフ線が中央核に接続。または線の繋がったバフ線/デバフ線のうちのどれかが中央核に接続した場合に効力を発揮します。
+    </div>
+
+    <div class="row">
+      <div class="group">
+        <label>術式名 / 外周銘</label>
+        <input id="spellName" type="text" value="Ars Sigilli" oninput="drawMagicCircle()" />
+      </div>
+
+      <div class="group">
+        <label>対象名（ラテン語）</label>
+        <input id="targetLatin" type="text" value="draco" oninput="drawMagicCircle()" />
+      </div>
+
+      <div class="group">
+        <label>密度補正（0〜100）</label>
+        <input id="density" type="number" min="0" max="100" value="58" oninput="drawMagicCircle()" />
+      </div>
+
+      <div class="group">
+        <label>追加円周文字（1行ごと）</label>
+        <textarea id="extraTexts" oninput="drawMagicCircle()" placeholder="例：&#10;VIA POTESTATIS&#10;NEXUS FORTUNAE&#10;SIGILLUM INTERIUS"></textarea>
+      </div>
+
+      <div class="group">
+        <label>接続陣の数</label>
+        <input id="connectorCount" type="range" min="0" max="8" value="0"
+          oninput="syncBasicValue('connectorCount'); renderConnectorInputs(); drawMagicCircle();" />
+        <div class="valueRow">接続陣数: <span id="connectorCountValue">0</span></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="group">
+        <label>通常線色</label>
+        <input id="inkColor" type="color" value="#2a0010" oninput="drawMagicCircle()" />
+
+        <label>淡線色</label>
+        <input id="thinColor" type="color" value="#5b2334" oninput="drawMagicCircle()" />
+
+        <label>文字色</label>
+        <input id="textColor" type="color" value="#421423" oninput="drawMagicCircle()" />
+      </div>
+
+      <div class="group">
+        <label>背景色</label>
+        <input id="paperColor" type="color" value="#f3eee5" oninput="drawMagicCircle()" />
+
+        <label>核の光</label>
+        <input id="coreColor" type="color" value="#fff2dd" oninput="drawMagicCircle()" />
+
+        <label>核の発光</label>
+        <input id="glowColor" type="color" value="#ffcfaa" oninput="drawMagicCircle()" />
+      </div>
+
+      <div class="group">
+        <label>バフ統一色</label>
+        <input id="buffColor" type="color" value="#3d8f63" oninput="drawMagicCircle()" />
+
+        <label>デバフ統一色</label>
+        <input id="debuffColor" type="color" value="#a03555" oninput="drawMagicCircle()" />
+      </div>
+    </div>
+
+    <div class="sectionTitle">ステータス副異界陣</div>
+    <div class="row" id="statsContainer"></div>
+
+    <div class="sectionTitle">接続陣</div>
+    <div class="row" id="connectorContainer"></div>
+
+    <div class="row">
+      <button onclick="drawMagicCircle()">生成</button>
+      <button onclick="randomizeEffects()">ランダム</button>
+      <button onclick="clearEffects()">リセット</button>
+      <button onclick="downloadPNG()">PNG保存</button>
+      <button onclick="downloadTransparentPDF()">透過PDF保存</button>
+    </div>
+
+    <div class="legend">
+      <strong>副異界陣対応</strong><br>
+      力=三角紋 / 防御=円盾紋 / 異能=六芒星 / 速度=シェブロン / 器用さ=＊ / 知力=月 / 体力=太陽 / 運=四つ葉紋 / 魅力=心臓紋 / 接続陣=六芒星<br>
+      通常=異界陣に反映しない / バフ=バフ色で出現・バフ線で接続 / デバフ=デバフ色で出現・デバフ線で接続
+    </div>
+  </div>
+
+  <canvas id="magicCanvas" width="1100" height="1100"></canvas>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    const STATS = [
+      { id: "power",        label: "力",     symbol: "triangle", angle: 270, defaultDistance: 245, defaultMode: "buff",   defaultAmount: 70 },
+      { id: "speed",        label: "速度",   symbol: "chevron",  angle: 325, defaultDistance: 252, defaultMode: "normal", defaultAmount: 50 },
+      { id: "defense",      label: "防御",   symbol: "circle",   angle:  25, defaultDistance: 245, defaultMode: "buff",   defaultAmount: 60 },
+      { id: "vitality",     label: "体力",   symbol: "sun",      angle:  75, defaultDistance: 232, defaultMode: "normal", defaultAmount: 50 },
+      { id: "ability",      label: "異能",   symbol: "hexagram", angle: 150, defaultDistance: 245, defaultMode: "buff",   defaultAmount: 80 },
+      { id: "intelligence", label: "知力",   symbol: "moon",     angle: 210, defaultDistance: 245, defaultMode: "normal", defaultAmount: 50 },
+      { id: "dexterity",    label: "器用さ", symbol: "asterisk", angle: 300, defaultDistance: 236, defaultMode: "normal", defaultAmount: 50 },
+      { id: "luck",         label: "運",     symbol: "clover",   angle: 180, defaultDistance: 188, defaultMode: "normal", defaultAmount: 50 },
+      { id: "charisma",     label: "魅力",   symbol: "heart",    angle:   0, defaultDistance: 188, defaultMode: "normal", defaultAmount: 50 }
+    ];
+
+    const MAX_CONNECTORS = 8;
+    let connectorState = Array.from({ length: MAX_CONNECTORS }, (_, i) => ({
+      mode: i % 2 === 0 ? "buff" : "debuff",
+      angle: (i * 45) % 360,
+      distance: 210,
+      size: 42
+    }));
+
+    const TAU = Math.PI * 2;
+    const deg = d => d * Math.PI / 180;
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const num = id => Number(document.getElementById(id).value) || 0;
+    const val = id => document.getElementById(id).value;
+
+    function renderInputs() {
+      const box = document.getElementById("statsContainer");
+      box.innerHTML = "";
+
+      STATS.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "group";
+        div.innerHTML = `
+          <label>${s.label}の効果</label>
+          <select id="${s.id}Mode" onchange="drawMagicCircle()">
+            <option value="normal" ${s.defaultMode === "normal" ? "selected" : ""}>通常</option>
+            <option value="buff" ${s.defaultMode === "buff" ? "selected" : ""}>バフ</option>
+            <option value="debuff" ${s.defaultMode === "debuff" ? "selected" : ""}>デバフ</option>
+          </select>
+
+          <label>${s.label}の効果強度</label>
+          <input id="${s.id}Amount" type="range" min="0" max="100" value="${s.defaultAmount}"
+            oninput="syncValue('${s.id}Amount'); drawMagicCircle();" />
+          <div class="valueRow">強度: <span id="${s.id}AmountValue">${s.defaultAmount}</span></div>
+
+          <label>${s.label}の距離</label>
+          <input id="${s.id}Distance" type="range" min="90" max="340" value="${s.defaultDistance}"
+            oninput="syncValue('${s.id}Distance'); drawMagicCircle();" />
+          <div class="valueRow">距離: <span id="${s.id}DistanceValue">${s.defaultDistance}</span></div>
+
+          <label>${s.label}の方位</label>
+          <input id="${s.id}Angle" type="range" min="0" max="359" value="${s.angle}"
+            oninput="syncValue('${s.id}Angle'); drawMagicCircle();" />
+          <div class="valueRow">方位: <span id="${s.id}AngleValue">${s.angle}</span>°</div>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+    function renderConnectorInputs() {
+      const count = clamp(num("connectorCount"), 0, MAX_CONNECTORS);
+      const box = document.getElementById("connectorContainer");
+      box.innerHTML = "";
+
+      for (let i = 0; i < count; i++) {
+        const c = connectorState[i];
+        const div = document.createElement("div");
+        div.className = "group";
+        div.innerHTML = `
+          <label>接続陣 ${i + 1} の種類</label>
+          <select id="conn${i}Mode" onchange="updateConnectorValue(${i}, 'mode', this.value)">
+            <option value="buff" ${c.mode === "buff" ? "selected" : ""}>バフ陣</option>
+            <option value="debuff" ${c.mode === "debuff" ? "selected" : ""}>デバフ陣</option>
+          </select>
+
+          <label>接続陣 ${i + 1} の距離</label>
+          <input id="conn${i}Distance" type="range" min="90" max="340" value="${c.distance}"
+            oninput="updateConnectorValue(${i}, 'distance', this.value)" />
+          <div class="valueRow">距離: <span id="conn${i}DistanceValue">${c.distance}</span></div>
+
+          <label>接続陣 ${i + 1} の方位</label>
+          <input id="conn${i}Angle" type="range" min="0" max="359" value="${c.angle}"
+            oninput="updateConnectorValue(${i}, 'angle', this.value)" />
+          <div class="valueRow">方位: <span id="conn${i}AngleValue">${c.angle}</span>°</div>
+
+          <label>接続陣 ${i + 1} のサイズ</label>
+          <input id="conn${i}Size" type="range" min="14" max="84" value="${c.size}"
+            oninput="updateConnectorValue(${i}, 'size', this.value)" />
+          <div class="valueRow">サイズ: <span id="conn${i}SizeValue">${c.size}</span></div>
+        `;
+        box.appendChild(div);
+      }
+    }
+
+    function syncBasicValue(id) {
+      const el = document.getElementById(id);
+      const out = document.getElementById(id + "Value");
+      if (el && out) out.textContent = el.value;
+    }
+
+    function syncValue(id) {
+      const el = document.getElementById(id);
+      const out = document.getElementById(id + "Value");
+      if (el && out) out.textContent = el.value;
+    }
+
+    function syncAllStatValues() {
+      STATS.forEach(s => {
+        syncValue(s.id + "Amount");
+        syncValue(s.id + "Distance");
+        syncValue(s.id + "Angle");
+      });
+      syncBasicValue("connectorCount");
+    }
+
+    function updateConnectorValue(index, field, value) {
+      connectorState[index][field] = field === "mode" ? value : Number(value);
+
+      if (field !== "mode") {
+        const id = `conn${index}${field.charAt(0).toUpperCase() + field.slice(1)}Value`;
+        const out = document.getElementById(id);
+        if (out) out.textContent = value;
+      }
+
+      drawMagicCircle();
+    }
+
+    function readColors() {
+      return {
+        ink: val("inkColor"),
+        thin: val("thinColor"),
+        text: val("textColor"),
+        paper: val("paperColor"),
+        core: val("coreColor"),
+        glow: val("glowColor"),
+        buff: val("buffColor"),
+        debuff: val("debuffColor")
+      };
+    }
+
+    function getStatState(statId, colors) {
+      const mode = document.getElementById(statId + "Mode").value;
+      const amount = clamp(num(statId + "Amount"), 0, 100);
+
+      if (mode === "buff") return { mode: "buff", amount, accent: colors.buff };
+      if (mode === "debuff") return { mode: "debuff", amount, accent: colors.debuff };
+      return { mode: "normal", amount: 0, accent: colors.ink };
+    }
+
+    function stateDetail(state) {
+      if (state.mode === "normal") return 0;
+      return 0.005 + Math.pow(state.amount / 100, 1.9) * 0.995;
+    }
+
+    function getSatelliteRadius(stat) {
+      return clamp(num(stat.id + "Distance"), 90, 340);
+    }
+
+    function getSatelliteAngle(stat) {
+      return deg(clamp(num(stat.id + "Angle"), 0, 359));
+    }
+
+    function getConnectors() {
+      const count = clamp(num("connectorCount"), 0, MAX_CONNECTORS);
+      return connectorState.slice(0, count);
+    }
+
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#", "");
+      const n = parseInt(h, 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    }
+
+    function noise(seed) {
+      const x = Math.sin(seed * 127.173) * 43758.5453123;
+      return x - Math.floor(x);
+    }
+
+    function line(ctx, x1, y1, x2, y2) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    function circle(ctx, x, y, r) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.stroke();
+    }
+
+    function polygon(ctx, x, y, r, sides, rot = -Math.PI / 2) {
+      ctx.beginPath();
+      for (let i = 0; i < sides; i++) {
+        const a = rot + TAU * i / sides;
+        const px = x + Math.cos(a) * r;
+        const py = y + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    function drawPseudoRunesOnArc(ctx, text, x, y, r, start, end, size = 14, jitter = 0) {
+      const base = (text || "ARS SIGILLI OBJECTUM LUX AETERNA VINCULUM CAELI").toUpperCase();
+      const phrase = (base + " • ").repeat(8);
+      const chars = phrase.split("");
+      const span = end - start;
+      const count = Math.max(1, Math.floor(Math.abs(span) * r / (size * 0.72)));
+
+      ctx.save();
+      ctx.font = `${size}px serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let i = 0; i < count; i++) {
+        const t = count === 1 ? 0.5 : i / (count - 1);
+        const a = start + span * t + (noise(i + jitter) - 0.5) * 0.01;
+        const ch = chars[i % chars.length];
+
+        ctx.save();
+        ctx.translate(x + Math.cos(a) * r, y + Math.sin(a) * r);
+        ctx.rotate(a + Math.PI / 2);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function getExtraTextLines() {
+      const raw = document.getElementById("extraTexts")?.value || "";
+      return raw
+        .split(/\n+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .slice(0, 6);
+    }
+
+    function drawPaper(ctx, w, h, paperColor) {
+      ctx.fillStyle = paperColor;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.save();
+      ctx.globalAlpha = 0.09;
+      for (let i = 0; i < 5000; i++) {
+        const n = noise(i * 9.13);
+        ctx.fillStyle = n > 0.5 ? "#000" : "#fff";
+        ctx.fillRect(noise(i) * w, noise(i + 33) * h, 1, 1);
+      }
+      ctx.restore();
+    }
+
+    function drawCore(ctx, cx, cy, coreColor, glowColor) {
+      ctx.save();
+
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 88);
+      glow.addColorStop(0, hexToRgba(glowColor, 0.92));
+      glow.addColorStop(0.22, hexToRgba(glowColor, 0.42));
+      glow.addColorStop(0.72, hexToRgba(glowColor, 0.08));
+      glow.addColorStop(1, hexToRgba(glowColor, 0));
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 88, 0, TAU);
+      ctx.fill();
+
+      const orb = ctx.createRadialGradient(cx, cy, 0, cx, cy, 38);
+      orb.addColorStop(0, "#fff");
+      orb.addColorStop(0.18, coreColor);
+      orb.addColorStop(0.62, glowColor);
+      orb.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = orb;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 38, 0, TAU);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawInscribedHexagram(ctx, cx, cy, r, strokeColor) {
+      ctx.save();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 3.1;
+
+      circle(ctx, cx, cy, r);
+      polygon(ctx, cx, cy, r, 3, -Math.PI / 2);
+      polygon(ctx, cx, cy, r, 3, Math.PI / 2);
+
+      ctx.restore();
+    }
+
+    function drawMainGeometry(ctx, cx, cy, ink, thin, textColor, spell, target, density) {
+      const dens = clamp(density, 0, 100) / 100;
+
+      ctx.save();
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = ink;
+      ctx.shadowBlur = 0;
+
+      const rings = [285, 274, 262, 248];
+
+      rings.forEach((r, i) => {
+        ctx.lineWidth = i === 0 || i === 2 ? 4.2 : 2.0;
+        circle(ctx, cx, cy, r);
+      });
+
+      ctx.strokeStyle = thin;
+      ctx.fillStyle = textColor;
+
+      const outerTextSize1 = 12.6 - dens * 1.0;
+      const outerTextSize2 = 10.6 - dens * 0.9;
+      const innerTextSize1 = 9.0 - dens * 0.8;
+      const innerTextSize2 = 7.8 - dens * 0.7;
+
+      drawPseudoRunesOnArc(ctx, spell, cx, cy, 268, deg(-172), deg(172), outerTextSize1, 2);
+      drawPseudoRunesOnArc(ctx, target ? `AD ${target} OBJECTUM` : spell, cx, cy, 254, deg(18), deg(342), outerTextSize2, 8);
+
+      drawInscribedHexagram(ctx, cx, cy, 248, ink);
+
+      ctx.strokeStyle = thin;
+      ctx.lineWidth = 2.0;
+      circle(ctx, cx, cy, 200);
+
+      ctx.fillStyle = textColor;
+      const extraLines = getExtraTextLines();
+
+      if (extraLines.length > 0) {
+        const radii = [214, 182, 158, 116, 96, 76];
+        const sizes = [9.8, 9.2, 8.8, 8.0, 7.5, 7.0];
+
+        extraLines.forEach((lineText, i) => {
+          const start = i % 2 === 0 ? deg(-160) : deg(24);
+          const end = i % 2 === 0 ? deg(160) : deg(336);
+          drawPseudoRunesOnArc(ctx, lineText, cx, cy, radii[i], start, end, sizes[i], 90 + i * 19);
+        });
+      } else {
+        drawPseudoRunesOnArc(ctx, "VINCULUM ANIMA LUMEN NOX RATIO FORTUNA", cx, cy, 158, deg(-160), deg(160), innerTextSize1, 90);
+        drawPseudoRunesOnArc(ctx, "SIGILLUM CORPUS MENS POTESTAS", cx, cy, 116, deg(24), deg(336), innerTextSize2, 110);
+      }
+
+      ctx.restore();
+    }
+
+    function drawSymbol(ctx, type, x, y, size, rot, detail) {
+      const loops = 1 + Math.floor(detail * 3);
+
+      switch (type) {
+        case "triangle":
+          polygon(ctx, x, y, size, 3, rot);
+          polygon(ctx, x, y, size * 0.55, 3, rot + Math.PI);
+          break;
+
+        case "circle":
+          circle(ctx, x, y, size);
+          circle(ctx, x, y, size * 0.62);
+          line(ctx, x - size * 0.75, y, x + size * 0.75, y);
+          line(ctx, x, y - size * 0.75, x, y + size * 0.75);
+          break;
+
+        case "hexagram":
+          polygon(ctx, x, y, size, 3, rot);
+          polygon(ctx, x, y, size, 3, rot + Math.PI);
+          circle(ctx, x, y, size * 0.50);
+          break;
+
+        case "chevron":
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rot);
+          for (let i = 0; i < loops; i++) {
+            const s = size * (1 - i * 0.18);
+            ctx.beginPath();
+            ctx.moveTo(-s, -s * 0.55);
+            ctx.lineTo(s * 0.35, 0);
+            ctx.lineTo(-s, s * 0.55);
+            ctx.stroke();
+          }
+          ctx.restore();
+          break;
+
+        case "asterisk":
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rot);
+          for (let i = 0; i < 4; i++) {
+            const a = i * Math.PI / 4;
+            line(ctx, Math.cos(a) * size, Math.sin(a) * size, -Math.cos(a) * size, -Math.sin(a) * size);
+          }
+          circle(ctx, 0, 0, size * 0.22);
+          ctx.restore();
+          break;
+
+        case "moon":
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rot);
+          ctx.beginPath();
+          ctx.arc(0, 0, size, Math.PI * 0.25, Math.PI * 1.75, false);
+          ctx.arc(size * 0.48, 0, size * 0.82, Math.PI * 1.6, Math.PI * 0.4, true);
+          ctx.closePath();
+          ctx.stroke();
+          circle(ctx, -size * 0.12, 0, size * 0.30);
+          ctx.restore();
+          break;
+
+        case "sun":
+          circle(ctx, x, y, size * 0.52);
+          circle(ctx, x, y, size * 0.25);
+          for (let i = 0; i < 10; i++) {
+            const a = rot + TAU * i / 10;
+            line(
+              ctx,
+              x + Math.cos(a) * size * 0.75,
+              y + Math.sin(a) * size * 0.75,
+              x + Math.cos(a) * size * 1.22,
+              y + Math.sin(a) * size * 1.22
+            );
+          }
+          break;
+
+        case "clover":
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rot);
+
+          for (let i = 0; i < 4; i++) {
+            const a = i * Math.PI / 2;
+            const px = Math.cos(a) * size * 0.32;
+            const py = Math.sin(a) * size * 0.32;
+
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(a);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(size * 0.18, -size * 0.42, size * 0.68, -size * 0.42, size * 0.78, 0);
+            ctx.bezierCurveTo(size * 0.68, size * 0.42, size * 0.18, size * 0.42, 0, 0);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(0, size * 0.24);
+          ctx.bezierCurveTo(size * 0.18, size * 0.62, size * 0.02, size * 0.92, -size * 0.2, size * 1.05);
+          ctx.stroke();
+
+          if (detail > 0.55) {
+            polygon(ctx, 0, 0, size * 0.35, 4, Math.PI / 4);
+          }
+          ctx.restore();
+          break;
+
+        case "heart":
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rot);
+          ctx.beginPath();
+          ctx.moveTo(0, size * 0.9);
+          ctx.bezierCurveTo(size, size * 0.1, size * 0.9, -size * 0.85, 0, -size * 0.3);
+          ctx.bezierCurveTo(-size * 0.9, -size * 0.85, -size, size * 0.1, 0, size * 0.9);
+          ctx.stroke();
+          circle(ctx, 0, -size * 0.02, size * 0.24);
+          ctx.restore();
+          break;
+      }
+    }
+
+    function getStatPoints(cx, cy, colors) {
+      return STATS.map((stat, index) => {
+        const state = getStatState(stat.id, colors);
+        if (state.mode === "normal") return null;
+
+        const a = getSatelliteAngle(stat);
+        const r = getSatelliteRadius(stat);
+
+        return {
+          kind: "stat",
+          stat,
+          index,
+          state,
+          angle: a,
+          x: cx + Math.cos(a) * r,
+          y: cy + Math.sin(a) * r
+        };
+      }).filter(Boolean);
+    }
+
+    function getConnectorPoints(cx, cy, colors) {
+      return getConnectors().map((conn, index) => {
+        const mode = conn.mode === "debuff" ? "debuff" : "buff";
+        const a = deg(clamp(conn.angle, 0, 359));
+        const r = clamp(conn.distance, 90, 340);
+
+        return {
+          kind: "connector",
+          connector: conn,
+          index,
+          state: {
+            mode,
+            amount: 100,
+            accent: mode === "buff" ? colors.buff : colors.debuff
+          },
+          angle: a,
+          x: cx + Math.cos(a) * r,
+          y: cy + Math.sin(a) * r
+        };
+      });
+    }
+
+    function buildSegments(activePoints, mode, cx, cy) {
+      const points = activePoints
+        .filter(p => p.state.mode === mode)
+        .sort((a, b) => a.angle - b.angle);
+
+      const segments = [];
+
+      points.forEach(p => {
+        segments.push({
+          type: "radial",
+          x1: cx,
+          y1: cy,
+          x2: p.x,
+          y2: p.y
+        });
+      });
+
+      if (points.length === 2) {
+        segments.push({
+          type: "group",
+          x1: points[0].x,
+          y1: points[0].y,
+          x2: points[1].x,
+          y2: points[1].y
+        });
+      } else if (points.length >= 3) {
+        for (let i = 0; i < points.length; i++) {
+          const a = points[i];
+          const b = points[(i + 1) % points.length];
+          segments.push({
+            type: "group",
+            x1: a.x,
+            y1: a.y,
+            x2: b.x,
+            y2: b.y
+          });
+        }
+      }
+
+      return { points, segments };
+    }
+
+    function segmentIntersection(s1, s2) {
+      const x1 = s1.x1, y1 = s1.y1, x2 = s1.x2, y2 = s1.y2;
+      const x3 = s2.x1, y3 = s2.y1, x4 = s2.x2, y4 = s2.y2;
+
+      const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+      if (Math.abs(denom) < 1e-9) return null;
+
+      const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+      const u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denom;
+
+      if (t <= 0.02 || t >= 0.98 || u <= 0.02 || u >= 0.98) return null;
+
+      return {
+        x: x1 + t * (x2 - x1),
+        y: y1 + t * (y2 - y1)
+      };
+    }
+
+    function removeCrossingSegments(buffSegments, debuffSegments) {
+      const removeBuff = new Set();
+      const removeDebuff = new Set();
+
+      for (let i = 0; i < buffSegments.length; i++) {
+        for (let j = 0; j < debuffSegments.length; j++) {
+          if (segmentIntersection(buffSegments[i], debuffSegments[j])) {
+            removeBuff.add(i);
+            removeDebuff.add(j);
+          }
+        }
+      }
+
+      return {
+        buff: buffSegments.filter((_, i) => !removeBuff.has(i)),
+        debuff: debuffSegments.filter((_, i) => !removeDebuff.has(i))
+      };
+    }
+
+    function drawSegments(ctx, segments, color) {
+      if (!segments.length) return;
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+      ctx.globalAlpha = 0.72;
+      ctx.lineWidth = 3.0;
+
+      segments.forEach(s => {
+        line(ctx, s.x1, s.y1, s.x2, s.y2);
+      });
+
+      ctx.restore();
+    }
+
+    function drawEffectConnections(ctx, cx, cy, activePoints, colors) {
+      const buffGroup = buildSegments(activePoints, "buff", cx, cy);
+      const debuffGroup = buildSegments(activePoints, "debuff", cx, cy);
+      const visible = removeCrossingSegments(buffGroup.segments, debuffGroup.segments);
+
+      drawSegments(ctx, visible.buff, colors.buff);
+      drawSegments(ctx, visible.debuff, colors.debuff);
+    }
+
+    function drawSatellite(ctx, cx, cy, stat, index, colors) {
+      const state = getStatState(stat.id, colors);
+      if (state.mode === "normal") return;
+
+      const detail = stateDetail(state);
+      const accent = state.accent;
+      const a = getSatelliteAngle(stat);
+      const r = getSatelliteRadius(stat);
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+
+      const size = 4 + detail * 118;
+      const ring = size + 8;
+
+      ctx.save();
+
+      ctx.strokeStyle = colors.ink;
+      ctx.fillStyle = colors.ink;
+      ctx.shadowColor = colors.glow;
+      ctx.shadowBlur = 3;
+      ctx.lineWidth = 3.8;
+      circle(ctx, x, y, ring);
+      ctx.lineWidth = 1.8;
+      circle(ctx, x, y, ring - 7);
+      circle(ctx, x, y, ring - 14);
+
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 10;
+      ctx.globalAlpha = 0.78;
+      ctx.lineWidth = 2.6;
+      circle(ctx, x, y, ring - 3);
+      ctx.restore();
+
+      ctx.fillStyle = colors.text;
+      drawPseudoRunesOnArc(
+        ctx,
+        stat.label + " " + stat.id,
+        x, y,
+        Math.max(12, ring - 9),
+        -Math.PI * 0.88,
+        Math.PI * 0.88,
+        Math.max(5.5, 6 + detail * 3.2),
+        index * 13
+      );
+
+      ctx.strokeStyle = accent;
+      ctx.fillStyle = accent;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = 2.8;
+      drawSymbol(ctx, stat.symbol, x, y, Math.max(4, size * 0.50), a + Math.PI / 2, detail);
+
+      ctx.restore();
+    }
+
+    function drawConnectorCircle(ctx, cx, cy, conn, index, colors) {
+      const mode = conn.mode === "debuff" ? "debuff" : "buff";
+      const accent = mode === "buff" ? colors.buff : colors.debuff;
+      const a = deg(clamp(conn.angle, 0, 359));
+      const r = clamp(conn.distance, 90, 340);
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      const size = clamp(conn.size, 14, 84);
+      const ring = size + 8;
+
+      ctx.save();
+
+      ctx.strokeStyle = colors.ink;
+      ctx.shadowColor = colors.glow;
+      ctx.shadowBlur = 4;
+      ctx.lineWidth = 3.4;
+      circle(ctx, x, y, ring);
+      ctx.lineWidth = 1.5;
+      circle(ctx, x, y, ring - 7);
+      circle(ctx, x, y, ring - 14);
+
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 8;
+      ctx.globalAlpha = 0.65;
+      ctx.lineWidth = 2.4;
+      circle(ctx, x, y, ring - 3);
+      ctx.restore();
+
+      ctx.fillStyle = colors.text;
+      drawPseudoRunesOnArc(
+        ctx,
+        `${mode === "buff" ? "AUXILIUM" : "MALEDICTIO"} ${index + 1}`,
+        x, y,
+        Math.max(12, ring - 9),
+        -Math.PI * 0.88,
+        Math.PI * 0.88,
+        Math.max(5.2, 5.5 + size * 0.03),
+        200 + index * 11
+      );
+
+      ctx.strokeStyle = accent;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 7;
+      ctx.lineWidth = 2.8;
+      drawSymbol(ctx, "hexagram", x, y, Math.max(6, size * 0.52), a + Math.PI / 2, 0.9);
+
+      ctx.restore();
+    }
+
+    function drawMagicCircle(options = {}) {
+      const canvas = document.getElementById("magicCanvas");
+      const ctx = canvas.getContext("2d");
+      const transparent = options.transparent === true;
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const density = clamp(num("density"), 0, 100);
+      const colors = readColors();
+      const spell = val("spellName") || "Ars Sigilli";
+      const target = val("targetLatin").trim();
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!transparent) {
+        drawPaper(ctx, canvas.width, canvas.height, colors.paper);
+      }
+
+      drawCore(ctx, cx, cy, colors.core, colors.glow);
+      drawMainGeometry(ctx, cx, cy, colors.ink, colors.thin, colors.text, spell, target, density);
+
+      const statPoints = getStatPoints(cx, cy, colors);
+      const connectorPoints = getConnectorPoints(cx, cy, colors);
+      const activePoints = [...statPoints, ...connectorPoints];
+      drawEffectConnections(ctx, cx, cy, activePoints, colors);
+
+      getConnectors().forEach((c, i) => drawConnectorCircle(ctx, cx, cy, c, i, colors));
+      STATS.forEach((s, i) => drawSatellite(ctx, cx, cy, s, i, colors));
+    }
+
+    function randomizeEffects() {
+      STATS.forEach(s => {
+        const roll = Math.random();
+        const mode = roll > 0.68 ? "buff" : roll < 0.28 ? "debuff" : "normal";
+        const amount = mode === "normal" ? 50 : Math.floor(25 + Math.random() * 75);
+        const distance = Math.floor(120 + Math.random() * 210);
+        const angle = Math.floor(Math.random() * 360);
+
+        document.getElementById(s.id + "Mode").value = mode;
+        document.getElementById(s.id + "Amount").value = amount;
+        document.getElementById(s.id + "Distance").value = distance;
+        document.getElementById(s.id + "Angle").value = angle;
+      });
+
+      const count = Math.floor(Math.random() * 5);
+      document.getElementById("connectorCount").value = count;
+      syncBasicValue("connectorCount");
+
+      for (let i = 0; i < count; i++) {
+        connectorState[i].mode = Math.random() > 0.5 ? "buff" : "debuff";
+        connectorState[i].distance = Math.floor(120 + Math.random() * 200);
+        connectorState[i].angle = Math.floor(Math.random() * 360);
+        connectorState[i].size = Math.floor(20 + Math.random() * 55);
+      }
+
+      document.getElementById("density").value = Math.floor(35 + Math.random() * 55);
+
+      renderConnectorInputs();
+      syncAllStatValues();
+      drawMagicCircle();
+    }
+
+    function clearEffects() {
+      STATS.forEach(s => {
+        document.getElementById(s.id + "Mode").value = "normal";
+        document.getElementById(s.id + "Amount").value = s.defaultAmount;
+        document.getElementById(s.id + "Distance").value = s.defaultDistance;
+        document.getElementById(s.id + "Angle").value = s.angle;
+      });
+
+      document.getElementById("connectorCount").value = 0;
+      syncBasicValue("connectorCount");
+
+      connectorState = Array.from({ length: MAX_CONNECTORS }, (_, i) => ({
+        mode: i % 2 === 0 ? "buff" : "debuff",
+        angle: (i * 45) % 360,
+        distance: 210,
+        size: 42
+      }));
+
+      renderConnectorInputs();
+      syncAllStatValues();
+      drawMagicCircle();
+    }
+
+    function safeFileName(base) {
+      return (base || "ikai_circle")
+        .replaceAll("/", "_")
+        .replaceAll("\\", "_")
+        .replaceAll(":", "_")
+        .replaceAll("*", "_")
+        .replaceAll("?", "_")
+        .replaceAll("\"", "_")
+        .replaceAll("<", "_")
+        .replaceAll(">", "_")
+        .replaceAll("|", "_")
+        .replaceAll(" ", "_");
+    }
+
+    function downloadPNG() {
+      const canvas = document.getElementById("magicCanvas");
+      drawMagicCircle();
+
+      canvas.toBlob(blob => {
+        if (!blob) return;
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = safeFileName(val("spellName")) + "_ikai_circle.png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    }
+
+    function downloadTransparentPDF() {
+      const canvas = document.getElementById("magicCanvas");
+
+      drawMagicCircle({ transparent: true });
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const jsPDF = window.jspdf && window.jspdf.jsPDF;
+
+      if (!jsPDF) {
+        alert("PDF出力ライブラリの読み込みに失敗しました。ネット接続を確認してください。");
+        drawMagicCircle();
+        return;
+      }
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "pt",
+        format: [canvas.width, canvas.height],
+        compress: true
+      });
+
+      pdf.addImage(dataUrl, "PNG", 0, 0, canvas.width, canvas.height, undefined, "FAST");
+      pdf.save(safeFileName(val("spellName")) + "_ikai_circle_transparent.pdf");
+
+      drawMagicCircle();
+    }
+
+    function runSelfTests() {
+      console.assert(safeFileName('a/b\\c:d*e?f"g<h>i|j k') === 'a_b_c_d_e_f_g_h_i_j_k', 'safeFileName should sanitize reserved characters');
+
+      const crossing = segmentIntersection(
+        { x1: 0, y1: 0, x2: 10, y2: 10 },
+        { x1: 0, y1: 10, x2: 10, y2: 0 }
+      );
+      console.assert(crossing && Math.round(crossing.x) === 5 && Math.round(crossing.y) === 5, 'segmentIntersection should detect crossing segments');
+
+      const visible = removeCrossingSegments(
+        [{ x1: 0, y1: 0, x2: 10, y2: 10 }],
+        [{ x1: 0, y1: 10, x2: 10, y2: 0 }]
+      );
+      console.assert(visible.buff.length === 0 && visible.debuff.length === 0, 'crossing buff/debuff segments should be removed');
+    }
+
+    renderInputs();
+    renderConnectorInputs();
+    syncAllStatValues();
+    syncBasicValue("connectorCount");
+    runSelfTests();
+    drawMagicCircle();
+  </script>
+</body>
+</html>
