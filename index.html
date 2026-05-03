@@ -367,7 +367,7 @@
       <button onclick="randomizeEffects()">ランダム</button>
       <button onclick="clearEffects()">リセット</button>
       <button onclick="downloadPNG()">PNG保存</button>
-      <button onclick="downloadTransparentPDF()">透過PDF保存</button>
+      <button onclick="downloadTransparentPNG()">透過PNG保存</button>
     </div>
 
     <div class="legend">
@@ -379,8 +379,6 @@
   <div class="canvasWrap">
     <canvas id="magicCanvas" width="1100" height="1100"></canvas>
   </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
     const STATS = [
@@ -1530,31 +1528,28 @@
       }, "image/png");
     }
 
-    function downloadTransparentPDF() {
+    function downloadTransparentPNG() {
       const canvas = document.getElementById("magicCanvas");
 
       drawMagicCircle({ transparent: true });
 
-      const dataUrl = canvas.toDataURL("image/png");
-      const jsPDF = window.jspdf && window.jspdf.jsPDF;
+      canvas.toBlob(blob => {
+        if (!blob) {
+          drawMagicCircle();
+          return;
+        }
 
-      if (!jsPDF) {
-        alert("PDF出力ライブラリの読み込みに失敗しました。ネット接続を確認してください。");
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = safeFileName(val("spellName")) + "_ikai_circle_transparent.png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
         drawMagicCircle();
-        return;
-      }
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: [canvas.width, canvas.height],
-        compress: true
-      });
-
-      pdf.addImage(dataUrl, "PNG", 0, 0, canvas.width, canvas.height, undefined, "FAST");
-      pdf.save(safeFileName(val("spellName")) + "_ikai_circle_transparent.pdf");
-
-      drawMagicCircle();
+      }, "image/png");
     }
 
     function runSelfTests() {
